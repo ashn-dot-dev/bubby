@@ -226,6 +226,11 @@ struct value {
         }
         cur = cur + 1;
         for cur != countof(str) {
+            # Require space separation between elements or optional space separation before the terminating ']'.
+            if out.vec().*.count() != 0 and cur != countof(str) and str[cur] != ']' and not bubby::is_whitespace(str[cur]) {
+                out.fini();
+                return std::result[[parse_info, std::error]]::init_error(std::error::PARSE_FAILURE);
+            }
             for cur != countof(str) and bubby::is_whitespace(str[cur]) {
                 cur = cur + 1;
             }
@@ -266,6 +271,11 @@ struct value {
         }
         cur = cur + 1;
         for cur != countof(str) {
+            # Require space separation between key-value pairs or optional space separation before the terminating '}'.
+            if out.map().*.count() != 0 and cur != countof(str) and str[cur] != '}' and not bubby::is_whitespace(str[cur]) {
+                out.fini();
+                return std::result[[parse_info, std::error]]::init_error(std::error::PARSE_FAILURE);
+            }
             for cur != countof(str) and bubby::is_whitespace(str[cur]) {
                 cur = cur + 1;
             }
@@ -287,6 +297,12 @@ struct value {
                 return std::result[[parse_info, std::error]]::init_error((:std::error)&"duplicate map key");
             }
 
+            # Require space separation between the key and value.
+            if cur == countof(str) or not bubby::is_whitespace(str[cur]) {
+                out.fini();
+                key.fini();
+                return std::result[[parse_info, std::error]]::init_error(std::error::PARSE_FAILURE);
+            }
             for cur != countof(str) and bubby::is_whitespace(str[cur]) {
                 cur = cur + 1;
             }
@@ -326,6 +342,11 @@ struct value {
         }
         cur = cur + 1;
         for cur != countof(str) {
+            # Require space separation between elements or optional space separation before the terminating ')'.
+            if out.set().*.count() != 0 and cur != countof(str) and str[cur] != ')' and not bubby::is_whitespace(str[cur]) {
+                out.fini();
+                return std::result[[parse_info, std::error]]::init_error(std::error::PARSE_FAILURE);
+            }
             for cur != countof(str) and bubby::is_whitespace(str[cur]) {
                 cur = cur + 1;
             }

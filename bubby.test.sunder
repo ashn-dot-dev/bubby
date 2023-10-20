@@ -237,6 +237,9 @@ func main() void {
     defer x.fini();
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
 
+    var result = bubby::value::parse_vec("[123\"foo\"]");
+    std::print_line(std::out(), result.error().*.data);
+
     std::print(std::out(), "\n");
     std::print_line(std::out(), "PARSE MAP");
 
@@ -255,6 +258,12 @@ func main() void {
     var result = bubby::value::parse_map("{\"foo\" 123 \"foo\" 456}");
     std::print_line(std::out(), result.error().*.data);
 
+    var result = bubby::value::parse_vec("{123\"foo\"}");
+    std::print_line(std::out(), result.error().*.data);
+
+    var result = bubby::value::parse_vec("{123 \"foo\"456 \"bar\"}");
+    std::print_line(std::out(), result.error().*.data);
+
     std::print(std::out(), "\n");
     std::print_line(std::out(), "PARSE SET");
 
@@ -269,6 +278,9 @@ func main() void {
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
 
     var result = bubby::value::parse_set("(123 123)");
+    std::print_line(std::out(), result.error().*.data);
+
+    var result = bubby::value::parse_vec("(123\"foo\")");
     std::print_line(std::out(), result.error().*.data);
 }
 ################################################################################
@@ -315,13 +327,17 @@ func main() void {
 # PARSE VEC
 # [123 "foo" [({})]]
 # [123 456 789]
+# parse failure
 #
 # PARSE MAP
 # {"bar" [({})] "foo" 123}
 # {"bar" 456 "foo" 123}
 # duplicate map key
+# parse failure
+# parse failure
 #
 # PARSE SET
 # ([({})] 123 "foo")
 # (789 456 123)
 # duplicate set element
+# parse failure
