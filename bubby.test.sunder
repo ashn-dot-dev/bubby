@@ -1,0 +1,327 @@
+import "std";
+
+import "bubby.sunder";
+
+func test_value_to_string_to_value(x: *bubby::value) void {
+    var s = std::string::init();
+    defer s.fini();
+    var writer = std::writer::init[[std::string]](&s);
+
+    std::print_format(writer, "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](x)]);
+    var y = bubby::value::init_from_str(s.data());
+    if y.is_error() {
+        std::print_format_line(
+            std::err(),
+            "error: {}",
+            (:[]std::formatter)[
+                std::formatter::init[[[]byte]](&y.error().*.data)]);
+        return;
+    }
+    var y = y.value();
+    defer y.fini();
+    if not std::eq[[bubby::value]](x, &y) {
+        std::print_format_line(
+            std::err(),
+            "value->string->value roundtrip error:\n\tx = {}\n\ty = {}",
+            (:[]std::formatter)[
+                std::formatter::init[[bubby::value]](x),
+                std::formatter::init[[bubby::value]](&y)]);
+        return;
+    }
+}
+
+func main() void {
+    var allocator = std::general_allocator::init();
+    defer allocator.fini();
+    defer {
+        var iter = std::general_allocator_iterator::init(&allocator);
+        for iter.advance() {
+            var size = iter.current().*.size();
+            std::print_format_line(
+                std::err(),
+                "leaked allocation of size {}",
+                (:[]std::formatter)[
+                    std::formatter::init[[usize]](&size)]);
+        }
+    }
+    var allocator = std::allocator::init[[typeof(allocator)]](&allocator);
+    std::set_global_allocator(allocator);
+
+    std::print_line(std::out(), "INT");
+
+    var x = bubby::value::init_int(0);
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    var x = bubby::value::init_int(+123);
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    var x = bubby::value::init_int(-123);
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "NUM");
+
+    var x = bubby::value::init_num(0.0);
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    var x = bubby::value::init_num(+123.5);
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    var x = bubby::value::init_num(-123.5);
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "STR");
+
+    var x = bubby::value::init_str("foo");
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    var x = bubby::value::init_str("foo\tbar\nbaz\0\"qux\"");
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "VEC");
+
+    var x = bubby::value::init_vec();
+    defer x.fini();
+    x.vec().*.push(bubby::value::init_int(123));
+    x.vec().*.push(bubby::value::init_num(123.5));
+    x.vec().*.push(bubby::value::init_str("foo"));
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    var x = bubby::value::init_vec();
+    defer x.fini();
+    x.vec().*.push(bubby::value::init_vec());
+    x.vec().*.data()[0].vec().*.push(bubby::value::init_int(123));
+    x.vec().*.data()[0].vec().*.push(bubby::value::init_num(123.5));
+    x.vec().*.data()[0].vec().*.push(bubby::value::init_str("foo"));
+    x.vec().*.push(bubby::value::init_vec());
+    x.vec().*.data()[1].vec().*.push(bubby::value::init_vec());
+    x.vec().*.data()[1].vec().*.data()[0].vec().*.push(bubby::value::init_vec());
+    x.vec().*.data()[1].vec().*.data()[0].vec().*.data()[0].vec().*.push(bubby::value::init_int(42));
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "MAP");
+
+    var x = bubby::value::init_map();
+    defer x.fini();
+    x.map().*.insert(bubby::value::init_int(123), bubby::value::init_str("foo"));
+    x.map().*.insert(bubby::value::init_num(123.5), bubby::value::init_str("bar"));
+    x.map().*.insert(bubby::value::init_str("str"), bubby::value::init_str("baz"));
+    # XXX: Print order depends on hash functions.
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    var x = bubby::value::init_map();
+    defer x.fini();
+    x.map().*.insert(bubby::value::init_int(123), bubby::value::init_map());
+    var view = x.map().*.lookup_view(bubby::value::init_int(123));
+    var view = view.value();
+    view.value.*.map().*.insert(bubby::value::init_str("foo"), bubby::value::init_map());
+    # XXX: Print order depends on hash functions.
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "SET");
+
+    var x = bubby::value::init_set();
+    defer x.fini();
+    x.set().*.insert(bubby::value::init_int(123));
+    x.set().*.insert(bubby::value::init_num(123.5));
+    x.set().*.insert(bubby::value::init_str("str"));
+    # XXX: Print order depends on hash functions.
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    var x = bubby::value::init_set();
+    defer x.fini();
+    x.set().*.insert(bubby::value::init_set());
+    var tmp = bubby::value::init_set();
+    defer tmp.fini();
+    var view = x.set().*.lookup_view(tmp);
+    var view = view.value();
+    view.*.set().*.insert(bubby::value::init_int(123));
+    view.*.set().*.insert(bubby::value::init_str("foo"));
+    view.*.set().*.insert(bubby::value::init_set());
+    # XXX: Print order depends on hash functions.
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "PARSE INT OR NUM");
+
+    var result = bubby::value::parse_int_or_num("123");
+    var x = result.value().value;
+    defer x.fini();
+    assert x.int() == 123;
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_int_or_num("123.5");
+    var x = result.value().value;
+    defer x.fini();
+    assert x.num() == 123.5;
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "PARSE INT");
+
+    var result = bubby::value::parse_int("123");
+    var x = result.value().value;
+    defer x.fini();
+    assert x.int() == 123;
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_int("+123");
+    var x = result.value().value;
+    defer x.fini();
+    assert x.int() == +123;
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_int("-123");
+    var x = result.value().value;
+    defer x.fini();
+    assert x.int() == -123;
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "PARSE NUM");
+
+    var result = bubby::value::parse_num("123.5");
+    var x = result.value().value;
+    defer x.fini();
+    assert x.num() == 123.5;
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_num("+123.5");
+    var x = result.value().value;
+    defer x.fini();
+    assert x.num() == +123.5;
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_num("-123.5");
+    var x = result.value().value;
+    defer x.fini();
+    assert x.num() == -123.5;
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "PARSE VEC");
+
+    var result = bubby::value::parse_vec("[123 \"foo\" [({})]]");
+    var x = result.value().value;
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_vec("[ 123 456   789 ]");
+    var x = result.value().value;
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "PARSE MAP");
+
+    var result = bubby::value::parse_map("{\"foo\" 123 \"bar\" [({})]}");
+    var x = result.value().value;
+    defer x.fini();
+    # XXX: Print order depends on hash functions.
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_map("{ \"foo\" 123 \"bar\"   456   }");
+    var x = result.value().value;
+    defer x.fini();
+    # XXX: Print order depends on hash functions.
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_map("{\"foo\" 123 \"foo\" 456}");
+    std::print_line(std::out(), result.error().*.data);
+
+    std::print(std::out(), "\n");
+    std::print_line(std::out(), "PARSE SET");
+
+    var result = bubby::value::parse_set("(123 \"foo\" [({})])");
+    var x = result.value().value;
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_set("( 123 456   789 )");
+    var x = result.value().value;
+    defer x.fini();
+    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_set("(123 123)");
+    std::print_line(std::out(), result.error().*.data);
+}
+################################################################################
+# INT
+# 0
+# 123
+# -123
+#
+# NUM
+# 0.0
+# 123.5
+# -123.5
+#
+# STR
+# "foo"
+# "foo\x09bar\x0Abaz\x00\x22qux\x22"
+#
+# VEC
+# [123 123.5 "foo"]
+# [[123 123.5 "foo"] [[[42]]]]
+#
+# MAP
+# {"str" "baz" 123 "foo" 123.5 "bar"}
+# {123 {"foo" {}}}
+#
+# SET
+# ("str" 123 123.5)
+# ((() 123 "foo"))
+#
+# PARSE INT OR NUM
+# 123
+# 123.5
+#
+# PARSE INT
+# 123
+# 123
+# -123
+#
+# PARSE NUM
+# 123.5
+# 123.5
+# -123.5
+#
+# PARSE VEC
+# [123 "foo" [({})]]
+# [123 456 789]
+#
+# PARSE MAP
+# {"bar" [({})] "foo" 123}
+# {"bar" 456 "foo" 123}
+# duplicate map key
+#
+# PARSE SET
+# ([({})] 123 "foo")
+# (789 456 123)
+# duplicate set element
