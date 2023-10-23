@@ -127,7 +127,6 @@ func main() void {
     x.map().*.insert(bubby::value::init_int(123), bubby::value::init_str("foo"));
     x.map().*.insert(bubby::value::init_num(123.5), bubby::value::init_str("bar"));
     x.map().*.insert(bubby::value::init_str("str"), bubby::value::init_str("baz"));
-    # XXX: Print order depends on hash functions.
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
 
@@ -137,7 +136,6 @@ func main() void {
     var view = x.map().*.lookup_view(bubby::value::init_int(123));
     var view = view.value();
     view.value.*.map().*.insert(bubby::value::init_str("foo"), bubby::value::init_map());
-    # XXX: Print order depends on hash functions.
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
 
@@ -149,7 +147,6 @@ func main() void {
     x.set().*.insert(bubby::value::init_int(123));
     x.set().*.insert(bubby::value::init_num(123.5));
     x.set().*.insert(bubby::value::init_str("str"));
-    # XXX: Print order depends on hash functions.
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
 
@@ -163,7 +160,6 @@ func main() void {
     view.*.set().*.insert(bubby::value::init_int(123));
     view.*.set().*.insert(bubby::value::init_str("foo"));
     view.*.set().*.insert(bubby::value::init_set());
-    # XXX: Print order depends on hash functions.
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
 
@@ -246,13 +242,11 @@ func main() void {
     var result = bubby::value::parse_map("{\"foo\" 123 \"bar\" [({})]}");
     var x = result.value().value;
     defer x.fini();
-    # XXX: Print order depends on hash functions.
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
 
     var result = bubby::value::parse_map("{ \"foo\" 123 \"bar\"   456   }");
     var x = result.value().value;
     defer x.fini();
-    # XXX: Print order depends on hash functions.
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
 
     var result = bubby::value::parse_map("{\"foo\" 123 \"foo\" 456}");
@@ -303,12 +297,12 @@ func main() void {
 # [[123 123.5 "foo"] [[[42]]]]
 #
 # MAP
-# {"str" "baz" 123 "foo" 123.5 "bar"}
+# {123 "foo" 123.5 "bar" "str" "baz"}
 # {123 {"foo" {}}}
 #
 # SET
-# ("str" 123 123.5)
-# ((() 123 "foo"))
+# (123 123.5 "str")
+# ((123 "foo" ()))
 #
 # PARSE INT OR NUM
 # 123
@@ -330,14 +324,14 @@ func main() void {
 # parse failure
 #
 # PARSE MAP
-# {"bar" [({})] "foo" 123}
-# {"bar" 456 "foo" 123}
+# {"foo" 123 "bar" [({})]}
+# {"foo" 123 "bar" 456}
 # duplicate map key
 # parse failure
 # parse failure
 #
 # PARSE SET
-# ([({})] 123 "foo")
-# (789 456 123)
+# (123 "foo" [({})])
+# (123 456 789)
 # duplicate set element
 # parse failure
