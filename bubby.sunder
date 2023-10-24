@@ -22,7 +22,7 @@ struct value {
         var num: f64;
         var str: []byte;
         var vec: *std::vector[[value]];
-        var map: *any; # *std::hash_map[[[value, value]];
+        var map: *any; # *std::hash_map[[value, value]];
         var set: *any; # *std::hash_set[[value]];
     };
 
