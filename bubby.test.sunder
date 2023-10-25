@@ -252,10 +252,10 @@ func main() void {
     var result = bubby::value::parse_map("{\"foo\" 123 \"foo\" 456}");
     std::print_line(std::out(), result.error().*.data);
 
-    var result = bubby::value::parse_vec("{123\"foo\"}");
+    var result = bubby::value::parse_map("{123\"foo\"}");
     std::print_line(std::out(), result.error().*.data);
 
-    var result = bubby::value::parse_vec("{123 \"foo\"456 \"bar\"}");
+    var result = bubby::value::parse_map("{123 \"foo\"456 \"bar\"}");
     std::print_line(std::out(), result.error().*.data);
 
     std::print(std::out(), "\n");
@@ -274,7 +274,7 @@ func main() void {
     var result = bubby::value::parse_set("(123 123)");
     std::print_line(std::out(), result.error().*.data);
 
-    var result = bubby::value::parse_vec("(123\"foo\")");
+    var result = bubby::value::parse_set("(123\"foo\")");
     std::print_line(std::out(), result.error().*.data);
 }
 ################################################################################
