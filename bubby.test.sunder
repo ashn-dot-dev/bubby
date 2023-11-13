@@ -190,7 +190,7 @@ func main() void {
     assert not x.bool();
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
 
-    var result = bubby::value::parse_bool("undefined");
+    var result = bubby::value::parse_bool("nope");
     std::print_line(std::out(), result.error().*.data);
 
     std::print(std::out(), "\n");
@@ -207,6 +207,9 @@ func main() void {
     defer x.fini();
     assert x.num() == 123.5;
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_int_or_num("nope");
+    std::print_line(std::out(), result.error().*.data);
 
     std::print(std::out(), "\n");
     std::print_line(std::out(), "PARSE INT");
@@ -229,6 +232,9 @@ func main() void {
     assert x.int() == -123;
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
 
+    var result = bubby::value::parse_int("nope");
+    std::print_line(std::out(), result.error().*.data);
+
     std::print(std::out(), "\n");
     std::print_line(std::out(), "PARSE NUM");
 
@@ -249,6 +255,9 @@ func main() void {
     defer x.fini();
     assert x.num() == -123.5;
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+
+    var result = bubby::value::parse_num("nope");
+    std::print_line(std::out(), result.error().*.data);
 
     std::print(std::out(), "\n");
     std::print_line(std::out(), "PARSE VEC");
@@ -382,16 +391,19 @@ func main() void {
 # PARSE INT OR NUM
 # 123
 # 123.5
+# parse failure
 #
 # PARSE INT
 # 123
 # 123
 # -123
+# parse failure
 #
 # PARSE NUM
 # 123.5
 # 123.5
 # -123.5
+# parse failure
 #
 # PARSE VEC
 # [123 "foo" [({})]]
