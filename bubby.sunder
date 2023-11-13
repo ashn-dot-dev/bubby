@@ -1,10 +1,6 @@
 namespace bubby;
 import "std";
 
-func is_whitespace(char: byte) bool {
-    return char == ' ' or char == '\t' or char == '\n';
-}
-
 enum type {
     BOOL;
     INT;
@@ -554,6 +550,10 @@ struct value {
     }
 }
 
+func _is_whitespace(char: byte) bool {
+    return char == ' ' or char == '\t' or char == '\n';
+}
+
 struct parse_success {
     var value: bubby::value;
     var index: usize;
@@ -719,11 +719,11 @@ func parse_vec(str: []byte) std::result[[bubby::parse_success, std::error]] {
     cur = cur + 1;
     for cur != countof(str) {
         # Require space separation between elements or optional space separation before the terminating ']'.
-        if out.vec().*.count() != 0 and cur != countof(str) and str[cur] != ']' and not bubby::is_whitespace(str[cur]) {
+        if out.vec().*.count() != 0 and cur != countof(str) and str[cur] != ']' and not bubby::_is_whitespace(str[cur]) {
             out.fini();
             return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
         }
-        for cur != countof(str) and bubby::is_whitespace(str[cur]) {
+        for cur != countof(str) and bubby::_is_whitespace(str[cur]) {
             cur = cur + 1;
         }
         if cur != countof(str) and str[cur] == ']' {
@@ -763,11 +763,11 @@ func parse_map(str: []byte) std::result[[bubby::parse_success, std::error]] {
     cur = cur + 1;
     for cur != countof(str) {
         # Require space separation between key-value pairs or optional space separation before the terminating '}'.
-        if out.map().*.count() != 0 and cur != countof(str) and str[cur] != '}' and not bubby::is_whitespace(str[cur]) {
+        if out.map().*.count() != 0 and cur != countof(str) and str[cur] != '}' and not bubby::_is_whitespace(str[cur]) {
             out.fini();
             return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
         }
-        for cur != countof(str) and bubby::is_whitespace(str[cur]) {
+        for cur != countof(str) and bubby::_is_whitespace(str[cur]) {
             cur = cur + 1;
         }
         if cur != countof(str) and str[cur] == '}' {
@@ -789,12 +789,12 @@ func parse_map(str: []byte) std::result[[bubby::parse_success, std::error]] {
         }
 
         # Require space separation between the key and value.
-        if cur == countof(str) or not bubby::is_whitespace(str[cur]) {
+        if cur == countof(str) or not bubby::_is_whitespace(str[cur]) {
             out.fini();
             key.fini();
             return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
         }
-        for cur != countof(str) and bubby::is_whitespace(str[cur]) {
+        for cur != countof(str) and bubby::_is_whitespace(str[cur]) {
             cur = cur + 1;
         }
         var result = bubby::parse(str[cur:countof(str)]);
@@ -833,11 +833,11 @@ func parse_set(str: []byte) std::result[[bubby::parse_success, std::error]] {
     cur = cur + 1;
     for cur != countof(str) {
         # Require space separation between elements or optional space separation before the terminating ')'.
-        if out.set().*.count() != 0 and cur != countof(str) and str[cur] != ')' and not bubby::is_whitespace(str[cur]) {
+        if out.set().*.count() != 0 and cur != countof(str) and str[cur] != ')' and not bubby::_is_whitespace(str[cur]) {
             out.fini();
             return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
         }
-        for cur != countof(str) and bubby::is_whitespace(str[cur]) {
+        for cur != countof(str) and bubby::_is_whitespace(str[cur]) {
             cur = cur + 1;
         }
         if cur != countof(str) and str[cur] == ')' {
