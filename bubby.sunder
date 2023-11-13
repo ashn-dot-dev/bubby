@@ -577,7 +577,7 @@ func parse_bool(str: []byte) std::result[[bubby::parse_success, std::error]] {
     return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
 }
 
-func parse_int_or_num(str: []byte) std::result[[bubby::parse_success, std::error]] {
+func _parse_int_or_num(str: []byte) std::result[[bubby::parse_success, std::error]] {
     if countof(str) == 0 {
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
@@ -621,7 +621,7 @@ func parse_int_or_num(str: []byte) std::result[[bubby::parse_success, std::error
 }
 
 func parse_int(str: []byte) std::result[[bubby::parse_success, std::error]] {
-    var result = bubby::parse_int_or_num(str);
+    var result = bubby::_parse_int_or_num(str);
     if result.is_error() {
         return result;
     }
@@ -634,7 +634,7 @@ func parse_int(str: []byte) std::result[[bubby::parse_success, std::error]] {
 }
 
 func parse_num(str: []byte) std::result[[bubby::parse_success, std::error]] {
-    var result = bubby::parse_int_or_num(str);
+    var result = bubby::_parse_int_or_num(str);
     if result.is_error() {
         return result;
     }
@@ -880,7 +880,7 @@ func parse(str: []byte) std::result[[bubby::parse_success, std::error]] {
     }
 
     if str[0] == '+' or str[0] == '-' or std::ascii::is_digit(str[0]) {
-        return bubby::parse_int_or_num(str);
+        return bubby::_parse_int_or_num(str);
     }
 
     if str[0] == '\"' {
