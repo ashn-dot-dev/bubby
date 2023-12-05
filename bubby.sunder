@@ -3,7 +3,7 @@ import "std";
 
 enum type {
     BOOL;
-    INT;
+    INTEGER;
     NUMBER;
     STRING;
     VECTOR;
@@ -15,7 +15,7 @@ struct value {
     var _type: type;
     var _data: union {
         var bool: bool;
-        var int: s64;
+        var integer: s64;
         var number: f64;
         var string: []byte;
         var vector: *std::vector[[value]];
@@ -32,10 +32,10 @@ struct value {
         };
     }
 
-    func init_int(int: s64) value {
+    func init_integer(integer: s64) value {
         return (:value){
-            ._type = bubby::type::INT,
-            ._data = (:typeof(value::_SELF._data)){.int = int},
+            ._type = bubby::type::INTEGER,
+            ._data = (:typeof(value::_SELF._data)){.integer = integer},
         };
     }
 
@@ -95,7 +95,7 @@ struct value {
 
     func fini(self: *value) void {
         switch self.*._type {
-        bubby::type::BOOL or bubby::type::INT or bubby::type::NUMBER {
+        bubby::type::BOOL or bubby::type::INTEGER or bubby::type::NUMBER {
             return;
         }
         bubby::type::STRING {
@@ -142,8 +142,8 @@ struct value {
         bubby::type::BOOL {
             return self.*._data.bool.hash();
         }
-        bubby::type::INT {
-            return self.*._data.int.hash();
+        bubby::type::INTEGER {
+            return self.*._data.integer.hash();
         }
         bubby::type::NUMBER {
             return self.*._data.number.hash();
@@ -194,8 +194,8 @@ struct value {
         bubby::type::BOOL {
             return std::eq[[::bool]](&lhs.*._data.bool, &rhs.*._data.bool);
         }
-        bubby::type::INT {
-            return std::eq[[s64]](&lhs.*._data.int, &rhs.*._data.int);
+        bubby::type::INTEGER {
+            return std::eq[[s64]](&lhs.*._data.integer, &rhs.*._data.integer);
         }
         bubby::type::NUMBER {
             return std::eq[[f64]](&lhs.*._data.number, &rhs.*._data.number);
@@ -275,12 +275,12 @@ struct value {
                 (:[]std::formatter)[
                     std::formatter::init[[::bool]](&self.*._data.bool)]);
         }
-        bubby::type::INT {
+        bubby::type::INTEGER {
             return std::write_format(
                 writer,
                 "{}",
                 (:[]std::formatter)[
-                    std::formatter::init[[s64]](&self.*._data.int)]);
+                    std::formatter::init[[s64]](&self.*._data.integer)]);
         }
         bubby::type::NUMBER {
             return std::write_format(
@@ -406,9 +406,9 @@ struct value {
         return self.*._data.bool;
     }
 
-    func int(self: *value) s64 {
-        assert self.*._type == bubby::type::INT;
-        return self.*._data.int;
+    func integer(self: *value) s64 {
+        assert self.*._type == bubby::type::INTEGER;
+        return self.*._data.integer;
     }
 
     func number(self: *value) f64 {
@@ -431,8 +431,8 @@ struct value {
         return (:*std::hash_map[[value, value]])self.*._data.map;
     }
 
-    func map_insert_int(self: *value, int: s64, val: bubby::value) void {
-        var existing = self.*.map().*.insert(value::init_int(int), val);
+    func map_insert_integer(self: *value, int: s64, val: bubby::value) void {
+        var existing = self.*.map().*.insert(value::init_integer(int), val);
         if existing.is_value() {
             var existing = existing.value();
             existing.key.fini();
@@ -440,29 +440,29 @@ struct value {
         }
     }
 
-    func map_lookup_int(self: *value, int: s64) std::optional[[*value]] {
-        var optional = self.*.map_lookup_view_int(int);
+    func map_lookup_integer(self: *value, int: s64) std::optional[[*value]] {
+        var optional = self.*.map_lookup_view_integer(int);
         if optional.is_empty() {
             return std::optional[[*value]]::EMPTY;
         }
         return std::optional[[*value]]::init_value(optional.value().value);
     }
 
-    func map_xlookup_int(self: *value, int: s64) *value {
-        var optional = self.*.map_lookup_int(int);
+    func map_xlookup_integer(self: *value, int: s64) *value {
+        var optional = self.*.map_lookup_integer(int);
         return optional.value();
     }
 
-    func map_lookup_view_int(self: *value, int: s64) std::optional[[std::key_value_view[[value, value]]]] {
+    func map_lookup_view_integer(self: *value, integer: s64) std::optional[[std::key_value_view[[value, value]]]] {
         var key = (:value){
-            ._type = bubby::type::INT,
-            ._data = (:typeof(value::_SELF._data)){.int = int},
+            ._type = bubby::type::INTEGER,
+            ._data = (:typeof(value::_SELF._data)){.integer = integer},
         };
         return self.*.map().*.lookup_view(key);
     }
 
-    func map_xlookup_view_int(self: *value, int: s64) std::key_value_view[[value, value]] {
-        var optional = self.*.map_lookup_view_int(int);
+    func map_xlookup_view_integer(self: *value, int: s64) std::key_value_view[[value, value]] {
+        var optional = self.*.map_lookup_view_integer(int);
         return optional.value();
     }
 
@@ -583,14 +583,14 @@ func _parse_int_or_number(str: []byte) std::result[[bubby::parse_success, std::e
     }
 
     var cur = 0u;
-    var type = bubby::type::INT;
+    var type = bubby::type::INTEGER;
     if str[cur] == '+' or str[cur] == '-' {
         cur = cur + 1;
     }
     if cur != countof(str) and not std::ascii::is_digit(str[cur]) {
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
-    for cur != countof(str) and (std::ascii::is_digit(str[cur]) or (type == bubby::type::INT and str[cur] == '.')) {
+    for cur != countof(str) and (std::ascii::is_digit(str[cur]) or (type == bubby::type::INTEGER and str[cur] == '.')) {
         if str[cur] == '.' {
             type = bubby::type::NUMBER;
             cur = cur + 1;
@@ -615,18 +615,18 @@ func _parse_int_or_number(str: []byte) std::result[[bubby::parse_success, std::e
         return std::result[[bubby::parse_success, std::error]]::init_error(result.error());
     }
     return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
-        .value = value::init_int(result.value()),
+        .value = value::init_integer(result.value()),
         .index = cur,
     });
 }
 
-func parse_int(str: []byte) std::result[[bubby::parse_success, std::error]] {
+func parse_integer(str: []byte) std::result[[bubby::parse_success, std::error]] {
     var result = bubby::_parse_int_or_number(str);
     if result.is_error() {
         return result;
     }
     var value = result.value().value;
-    if value.type() != bubby::type::INT {
+    if value.type() != bubby::type::INTEGER {
         value.fini();
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
