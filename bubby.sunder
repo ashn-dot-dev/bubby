@@ -6,7 +6,7 @@ enum type {
     INT;
     NUM;
     STR;
-    VEC;
+    VECTOR;
     MAP;
     SET;
 }
@@ -18,7 +18,7 @@ struct value {
         var int: s64;
         var num: f64;
         var str: []byte;
-        var vec: *std::vector[[value]];
+        var vector: *std::vector[[value]];
         var map: *any; # *std::hash_map[[value, value]];
         var set: *any; # *std::hash_set[[value]];
     };
@@ -55,12 +55,12 @@ struct value {
         };
     }
 
-    func init_vec() value {
+    func init_vector() value {
         var new = std::new[[std::vector[[value]]]]();
         *new = std::vector[[value]]::init();
         return (:value){
-            ._type = bubby::type::VEC,
-            ._data = (:typeof(value::_SELF._data)){.vec = new},
+            ._type = bubby::type::VECTOR,
+            ._data = (:typeof(value::_SELF._data)){.vector = new},
         };
     }
 
@@ -102,13 +102,13 @@ struct value {
             std::slice[[byte]]::delete(self.*._data.str);
             return;
         }
-        bubby::type::VEC {
-            var iter = std::slice_iterator[[value]]::init(self.*._data.vec.*.data());
+        bubby::type::VECTOR {
+            var iter = std::slice_iterator[[value]]::init(self.*._data.vector.*.data());
             for iter.advance() {
                 value::fini(iter.current());
             }
-            std::vector[[value]]::fini(self.*._data.vec);
-            std::delete[[std::vector[[value]]]](self.*._data.vec);
+            std::vector[[value]]::fini(self.*._data.vector);
+            std::delete[[std::vector[[value]]]](self.*._data.vector);
             return;
         }
         bubby::type::MAP {
@@ -151,9 +151,9 @@ struct value {
         bubby::type::STR {
             return self.*._data.str.hash();
         }
-        bubby::type::VEC {
+        bubby::type::VECTOR {
             var hash = 0u;
-            var iter = std::slice_iterator[[value]]::init(self.*._data.vec.*.data());
+            var iter = std::slice_iterator[[value]]::init(self.*._data.vector.*.data());
             for iter.advance() {
                 hash = hash +% value::hash(iter.current());
             }
@@ -203,12 +203,12 @@ struct value {
         bubby::type::STR {
             return std::eq[[[]byte]](&lhs.*._data.str, &rhs.*._data.str);
         }
-        bubby::type::VEC {
-            if lhs.*._data.vec.*.count() != rhs.*._data.vec.*.count() {
+        bubby::type::VECTOR {
+            if lhs.*._data.vector.*.count() != rhs.*._data.vector.*.count() {
                 return false;
             }
-            var lhs_iter = std::slice_iterator[[value]]::init(lhs.*._data.vec.*.data());
-            var rhs_iter = std::slice_iterator[[value]]::init(rhs.*._data.vec.*.data());
+            var lhs_iter = std::slice_iterator[[value]]::init(lhs.*._data.vector.*.data());
+            var rhs_iter = std::slice_iterator[[value]]::init(rhs.*._data.vector.*.data());
             for lhs_iter.advance() and rhs_iter.advance() {
                 if not std::eq[[value]](lhs_iter.current(), rhs_iter.current()) {
                     return false;
@@ -324,13 +324,13 @@ struct value {
             }
             return std::write_all(writer, "\"");
         }
-        bubby::type::VEC {
+        bubby::type::VECTOR {
             var result = std::write_all(writer, "[");
             if result.is_error() {
                 return result;
             }
             var sep = "";
-            var iter = std::slice_iterator[[value]]::init(self.*._data.vec.*.data());
+            var iter = std::slice_iterator[[value]]::init(self.*._data.vector.*.data());
             for iter.advance() {
                 var result = std::write_format(
                     writer,
@@ -421,9 +421,9 @@ struct value {
         return self.*._data.str;
     }
 
-    func vec(self: *value) *std::vector[[value]] {
-        assert self.*._type == bubby::type::VEC;
-        return self.*._data.vec;
+    func vector(self: *value) *std::vector[[value]] {
+        assert self.*._type == bubby::type::VECTOR;
+        return self.*._data.vector;
     }
 
     func map(self: *value) *std::hash_map[[value, value]] {
@@ -705,13 +705,13 @@ func parse_str(str: []byte) std::result[[bubby::parse_success, std::error]] {
     });
 }
 
-func parse_vec(str: []byte) std::result[[bubby::parse_success, std::error]] {
+func parse_vector(str: []byte) std::result[[bubby::parse_success, std::error]] {
     if countof(str) == 0 {
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
 
     var cur = 0u;
-    var out = value::init_vec();
+    var out = value::init_vector();
     if cur == countof(str) or str[cur] != '[' {
         out.fini();
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
@@ -719,7 +719,7 @@ func parse_vec(str: []byte) std::result[[bubby::parse_success, std::error]] {
     cur = cur + 1;
     for cur != countof(str) {
         # Require space separation between elements or optional space separation before the terminating ']'.
-        if out.vec().*.count() != 0 and cur != countof(str) and str[cur] != ']' and not bubby::_is_whitespace(str[cur]) {
+        if out.vector().*.count() != 0 and cur != countof(str) and str[cur] != ']' and not bubby::_is_whitespace(str[cur]) {
             out.fini();
             return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
         }
@@ -736,7 +736,7 @@ func parse_vec(str: []byte) std::result[[bubby::parse_success, std::error]] {
             return result;
         }
         cur = cur + result.value().index;
-        out.vec().*.push(result.value().value);
+        out.vector().*.push(result.value().value);
     }
     if cur == countof(str) or str[cur] != ']' {
         out.fini();
@@ -888,7 +888,7 @@ func parse(str: []byte) std::result[[bubby::parse_success, std::error]] {
     }
 
     if str[0] == '[' {
-        return bubby::parse_vec(str);
+        return bubby::parse_vector(str);
     }
 
     if str[0] == '{' {
