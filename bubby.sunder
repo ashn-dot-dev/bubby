@@ -5,7 +5,7 @@ enum type {
     BOOL;
     INT;
     NUM;
-    STR;
+    STRING;
     VECTOR;
     MAP;
     SET;
@@ -17,7 +17,7 @@ struct value {
         var bool: bool;
         var int: s64;
         var num: f64;
-        var str: []byte;
+        var string: []byte;
         var vector: *std::vector[[value]];
         var map: *any; # *std::hash_map[[value, value]];
         var set: *any; # *std::hash_set[[value]];
@@ -46,12 +46,12 @@ struct value {
         };
     }
 
-    func init_str(str: []byte) value {
-        var new = std::slice[[byte]]::new(countof(str));
-        std::slice[[byte]]::copy(new, str);
+    func init_string(string: []byte) value {
+        var new = std::slice[[byte]]::new(countof(string));
+        std::slice[[byte]]::copy(new, string);
         return (:value){
-            ._type = bubby::type::STR,
-            ._data = (:typeof(value::_SELF._data)){.str = new},
+            ._type = bubby::type::STRING,
+            ._data = (:typeof(value::_SELF._data)){.string = new},
         };
     }
 
@@ -98,8 +98,8 @@ struct value {
         bubby::type::BOOL or bubby::type::INT or bubby::type::NUM {
             return;
         }
-        bubby::type::STR {
-            std::slice[[byte]]::delete(self.*._data.str);
+        bubby::type::STRING {
+            std::slice[[byte]]::delete(self.*._data.string);
             return;
         }
         bubby::type::VECTOR {
@@ -148,8 +148,8 @@ struct value {
         bubby::type::NUM {
             return self.*._data.num.hash();
         }
-        bubby::type::STR {
-            return self.*._data.str.hash();
+        bubby::type::STRING {
+            return self.*._data.string.hash();
         }
         bubby::type::VECTOR {
             var hash = 0u;
@@ -200,8 +200,8 @@ struct value {
         bubby::type::NUM {
             return std::eq[[f64]](&lhs.*._data.num, &rhs.*._data.num);
         }
-        bubby::type::STR {
-            return std::eq[[[]byte]](&lhs.*._data.str, &rhs.*._data.str);
+        bubby::type::STRING {
+            return std::eq[[[]byte]](&lhs.*._data.string, &rhs.*._data.string);
         }
         bubby::type::VECTOR {
             if lhs.*._data.vector.*.count() != rhs.*._data.vector.*.count() {
@@ -289,15 +289,15 @@ struct value {
                 (:[]std::formatter)[
                     std::formatter::init[[f64]](&self.*._data.num)]);
         }
-        bubby::type::STR {
+        bubby::type::STRING {
             var result = std::write_all(writer, "\"");
             if result.is_error() {
                 return result;
             }
             # All non-printable bytes, plus the double quote used to denote the
             # start and end of the string, are printed using escaped hex bytes.
-            for i in countof(self.*._data.str) {
-                var c = self.*._data.str[i];
+            for i in countof(self.*._data.string) {
+                var c = self.*._data.string[i];
                 if c == '\"' or c == '\\' or c < ' ' or c > '~' {
                     let DIGITS = (:[]byte)[
                         '0', '1', '2', '3', '4', '5', '6', '7',
@@ -416,9 +416,9 @@ struct value {
         return self.*._data.num;
     }
 
-    func str(self: *value) []byte {
-        assert self.*._type == bubby::type::STR;
-        return self.*._data.str;
+    func string(self: *value) []byte {
+        assert self.*._type == bubby::type::STRING;
+        return self.*._data.string;
     }
 
     func vector(self: *value) *std::vector[[value]] {
@@ -502,7 +502,7 @@ struct value {
     }
 
     func map_insert_str(self: *value, str: []byte, val: bubby::value) void {
-        var existing = self.*.map().*.insert(value::init_str(str), val);
+        var existing = self.*.map().*.insert(value::init_string(str), val);
         if existing.is_value() {
             var existing = existing.value();
             existing.key.fini();
@@ -525,8 +525,8 @@ struct value {
 
     func map_lookup_view_str(self: *value, str: []byte) std::optional[[std::key_value_view[[value, value]]]] {
         var key = (:value){
-            ._type = bubby::type::STR,
-            ._data = (:typeof(value::_SELF._data)){.str = str},
+            ._type = bubby::type::STRING,
+            ._data = (:typeof(value::_SELF._data)){.string = str},
         };
         return self.*.map().*.lookup_view(key);
     }
@@ -646,7 +646,7 @@ func parse_num(str: []byte) std::result[[bubby::parse_success, std::error]] {
     return result;
 }
 
-func parse_str(str: []byte) std::result[[bubby::parse_success, std::error]] {
+func parse_string(str: []byte) std::result[[bubby::parse_success, std::error]] {
     if countof(str) == 0 {
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
@@ -698,8 +698,8 @@ func parse_str(str: []byte) std::result[[bubby::parse_success, std::error]] {
     cur = cur + 1;
     return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
         .value = (:value){
-            ._type = bubby::type::STR,
-            ._data = (:typeof(value::_SELF._data)){.str = buf},
+            ._type = bubby::type::STRING,
+            ._data = (:typeof(value::_SELF._data)){.string = buf},
         },
         .index = cur,
     });
@@ -884,7 +884,7 @@ func parse(str: []byte) std::result[[bubby::parse_success, std::error]] {
     }
 
     if str[0] == '\"' {
-        return bubby::parse_str(str);
+        return bubby::parse_string(str);
     }
 
     if str[0] == '[' {
