@@ -2,7 +2,7 @@ namespace bubby;
 import "std";
 
 enum type {
-    BOOL;
+    BOOLEAN;
     INTEGER;
     NUMBER;
     STRING;
@@ -14,7 +14,7 @@ enum type {
 struct value {
     var _type: type;
     var _data: union {
-        var bool: bool;
+        var boolean: bool;
         var integer: s64;
         var number: f64;
         var string: []byte;
@@ -25,10 +25,10 @@ struct value {
 
     let _SELF: value = uninit;
 
-    func init_bool(bool: bool) value {
+    func init_boolean(boolean: bool) value {
         return (:value){
-            ._type = bubby::type::BOOL,
-            ._data = (:typeof(value::_SELF._data)){.bool = bool},
+            ._type = bubby::type::BOOLEAN,
+            ._data = (:typeof(value::_SELF._data)){.boolean = boolean},
         };
     }
 
@@ -95,7 +95,7 @@ struct value {
 
     func fini(self: *value) void {
         switch self.*._type {
-        bubby::type::BOOL or bubby::type::INTEGER or bubby::type::NUMBER {
+        bubby::type::BOOLEAN or bubby::type::INTEGER or bubby::type::NUMBER {
             return;
         }
         bubby::type::STRING {
@@ -139,8 +139,8 @@ struct value {
 
     func hash(self: *value) usize {
         switch self.*._type {
-        bubby::type::BOOL {
-            return self.*._data.bool.hash();
+        bubby::type::BOOLEAN {
+            return self.*._data.boolean.hash();
         }
         bubby::type::INTEGER {
             return self.*._data.integer.hash();
@@ -191,8 +191,8 @@ struct value {
         }
 
         switch lhs.*._type {
-        bubby::type::BOOL {
-            return std::eq[[::bool]](&lhs.*._data.bool, &rhs.*._data.bool);
+        bubby::type::BOOLEAN {
+            return std::eq[[bool]](&lhs.*._data.boolean, &rhs.*._data.boolean);
         }
         bubby::type::INTEGER {
             return std::eq[[s64]](&lhs.*._data.integer, &rhs.*._data.integer);
@@ -268,12 +268,12 @@ struct value {
         }
 
         switch self.*._type {
-        bubby::type::BOOL {
+        bubby::type::BOOLEAN {
             return std::write_format(
                 writer,
                 "{}",
                 (:[]std::formatter)[
-                    std::formatter::init[[::bool]](&self.*._data.bool)]);
+                    std::formatter::init[[bool]](&self.*._data.boolean)]);
         }
         bubby::type::INTEGER {
             return std::write_format(
@@ -401,9 +401,9 @@ struct value {
         return self.*._type;
     }
 
-    func bool(self: *value) bool {
-        assert self.*._type == bubby::type::BOOL;
-        return self.*._data.bool;
+    func boolean(self: *value) bool {
+        assert self.*._type == bubby::type::BOOLEAN;
+        return self.*._data.boolean;
     }
 
     func integer(self: *value) s64 {
@@ -559,17 +559,17 @@ struct parse_success {
     var index: usize;
 }
 
-func parse_bool(str: []byte) std::result[[bubby::parse_success, std::error]] {
+func parse_boolean(str: []byte) std::result[[bubby::parse_success, std::error]] {
     if std::str::eq(str, "true") {
         return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
-            .value = value::init_bool(true),
+            .value = value::init_boolean(true),
             .index = countof("true"),
         });
     }
 
     if std::str::eq(str, "false") {
         return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
-            .value = value::init_bool(false),
+            .value = value::init_boolean(false),
             .index = countof("false"),
         });
     }
@@ -876,7 +876,7 @@ func parse(str: []byte) std::result[[bubby::parse_success, std::error]] {
     }
 
     if str[0] == 't' or str[0] == 'f' {
-        return bubby::parse_bool(str);
+        return bubby::parse_boolean(str);
     }
 
     if str[0] == '+' or str[0] == '-' or std::ascii::is_digit(str[0]) {
