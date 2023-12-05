@@ -77,19 +77,19 @@ func main() void {
     test_value_to_string_to_value(&x);
 
     std::print(std::out(), "\n");
-    std::print_line(std::out(), "NUM");
+    std::print_line(std::out(), "NUMBER");
 
-    var x = bubby::value::init_num(0.0);
+    var x = bubby::value::init_number(0.0);
     defer x.fini();
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
 
-    var x = bubby::value::init_num(+123.5);
+    var x = bubby::value::init_number(+123.5);
     defer x.fini();
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
 
-    var x = bubby::value::init_num(-123.5);
+    var x = bubby::value::init_number(-123.5);
     defer x.fini();
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
@@ -113,7 +113,7 @@ func main() void {
     var x = bubby::value::init_vector();
     defer x.fini();
     x.vector().*.push(bubby::value::init_int(123));
-    x.vector().*.push(bubby::value::init_num(123.5));
+    x.vector().*.push(bubby::value::init_number(123.5));
     x.vector().*.push(bubby::value::init_string("foo"));
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
@@ -122,7 +122,7 @@ func main() void {
     defer x.fini();
     x.vector().*.push(bubby::value::init_vector());
     x.vector().*.data()[0].vector().*.push(bubby::value::init_int(123));
-    x.vector().*.data()[0].vector().*.push(bubby::value::init_num(123.5));
+    x.vector().*.data()[0].vector().*.push(bubby::value::init_number(123.5));
     x.vector().*.data()[0].vector().*.push(bubby::value::init_string("foo"));
     x.vector().*.push(bubby::value::init_vector());
     x.vector().*.data()[1].vector().*.push(bubby::value::init_vector());
@@ -137,7 +137,7 @@ func main() void {
     var x = bubby::value::init_map();
     defer x.fini();
     x.map().*.insert(bubby::value::init_int(123), bubby::value::init_string("foo"));
-    x.map().*.insert(bubby::value::init_num(123.5), bubby::value::init_string("bar"));
+    x.map().*.insert(bubby::value::init_number(123.5), bubby::value::init_string("bar"));
     x.map().*.insert(bubby::value::init_string("str"), bubby::value::init_string("baz"));
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
@@ -157,7 +157,7 @@ func main() void {
     var x = bubby::value::init_set();
     defer x.fini();
     x.set().*.insert(bubby::value::init_int(123));
-    x.set().*.insert(bubby::value::init_num(123.5));
+    x.set().*.insert(bubby::value::init_number(123.5));
     x.set().*.insert(bubby::value::init_string("str"));
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
@@ -218,27 +218,27 @@ func main() void {
     std::print_line(std::out(), result.error().*.data);
 
     std::print(std::out(), "\n");
-    std::print_line(std::out(), "PARSE NUM");
+    std::print_line(std::out(), "PARSE NUMBER");
 
-    var result = bubby::parse_num("123.5");
+    var result = bubby::parse_number("123.5");
     var x = result.value().value;
     defer x.fini();
-    assert x.num() == 123.5;
+    assert x.number() == 123.5;
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
 
-    var result = bubby::parse_num("+123.5");
+    var result = bubby::parse_number("+123.5");
     var x = result.value().value;
     defer x.fini();
-    assert x.num() == +123.5;
+    assert x.number() == +123.5;
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
 
-    var result = bubby::parse_num("-123.5");
+    var result = bubby::parse_number("-123.5");
     var x = result.value().value;
     defer x.fini();
-    assert x.num() == -123.5;
+    assert x.number() == -123.5;
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
 
-    var result = bubby::parse_num("nope");
+    var result = bubby::parse_number("nope");
     std::print_line(std::out(), result.error().*.data);
 
     std::print(std::out(), "\n");
@@ -362,7 +362,7 @@ func main() void {
 # 123
 # -123
 #
-# NUM
+# NUMBER
 # 0.0
 # 123.5
 # -123.5
@@ -394,7 +394,7 @@ func main() void {
 # -123
 # parse failure
 #
-# PARSE NUM
+# PARSE NUMBER
 # 123.5
 # 123.5
 # -123.5

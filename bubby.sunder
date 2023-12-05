@@ -4,7 +4,7 @@ import "std";
 enum type {
     BOOL;
     INT;
-    NUM;
+    NUMBER;
     STRING;
     VECTOR;
     MAP;
@@ -16,7 +16,7 @@ struct value {
     var _data: union {
         var bool: bool;
         var int: s64;
-        var num: f64;
+        var number: f64;
         var string: []byte;
         var vector: *std::vector[[value]];
         var map: *any; # *std::hash_map[[value, value]];
@@ -39,10 +39,10 @@ struct value {
         };
     }
 
-    func init_num(num: f64) value {
+    func init_number(number: f64) value {
         return (:value){
-            ._type = bubby::type::NUM,
-            ._data = (:typeof(value::_SELF._data)){.num = num},
+            ._type = bubby::type::NUMBER,
+            ._data = (:typeof(value::_SELF._data)){.number = number},
         };
     }
 
@@ -95,7 +95,7 @@ struct value {
 
     func fini(self: *value) void {
         switch self.*._type {
-        bubby::type::BOOL or bubby::type::INT or bubby::type::NUM {
+        bubby::type::BOOL or bubby::type::INT or bubby::type::NUMBER {
             return;
         }
         bubby::type::STRING {
@@ -145,8 +145,8 @@ struct value {
         bubby::type::INT {
             return self.*._data.int.hash();
         }
-        bubby::type::NUM {
-            return self.*._data.num.hash();
+        bubby::type::NUMBER {
+            return self.*._data.number.hash();
         }
         bubby::type::STRING {
             return self.*._data.string.hash();
@@ -197,8 +197,8 @@ struct value {
         bubby::type::INT {
             return std::eq[[s64]](&lhs.*._data.int, &rhs.*._data.int);
         }
-        bubby::type::NUM {
-            return std::eq[[f64]](&lhs.*._data.num, &rhs.*._data.num);
+        bubby::type::NUMBER {
+            return std::eq[[f64]](&lhs.*._data.number, &rhs.*._data.number);
         }
         bubby::type::STRING {
             return std::eq[[[]byte]](&lhs.*._data.string, &rhs.*._data.string);
@@ -282,12 +282,12 @@ struct value {
                 (:[]std::formatter)[
                     std::formatter::init[[s64]](&self.*._data.int)]);
         }
-        bubby::type::NUM {
+        bubby::type::NUMBER {
             return std::write_format(
                 writer,
                 "{}",
                 (:[]std::formatter)[
-                    std::formatter::init[[f64]](&self.*._data.num)]);
+                    std::formatter::init[[f64]](&self.*._data.number)]);
         }
         bubby::type::STRING {
             var result = std::write_all(writer, "\"");
@@ -411,9 +411,9 @@ struct value {
         return self.*._data.int;
     }
 
-    func num(self: *value) f64 {
-        assert self.*._type == bubby::type::NUM;
-        return self.*._data.num;
+    func number(self: *value) f64 {
+        assert self.*._type == bubby::type::NUMBER;
+        return self.*._data.number;
     }
 
     func string(self: *value) []byte {
@@ -467,7 +467,7 @@ struct value {
     }
 
     func map_insert_num(self: *value, num: f64, val: bubby::value) void {
-        var existing = self.*.map().*.insert(value::init_num(num), val);
+        var existing = self.*.map().*.insert(value::init_number(num), val);
         if existing.is_value() {
             var existing = existing.value();
             existing.key.fini();
@@ -488,10 +488,10 @@ struct value {
         return optional.value();
     }
 
-    func map_lookup_view_num(self: *value, num: f64) std::optional[[std::key_value_view[[value, value]]]] {
+    func map_lookup_view_num(self: *value, number: f64) std::optional[[std::key_value_view[[value, value]]]] {
         var key = (:value){
-            ._type = bubby::type::NUM,
-            ._data = (:typeof(value::_SELF._data)){.num = num},
+            ._type = bubby::type::NUMBER,
+            ._data = (:typeof(value::_SELF._data)){.number = number},
         };
         return self.*.map().*.lookup_view(key);
     }
@@ -577,7 +577,7 @@ func parse_bool(str: []byte) std::result[[bubby::parse_success, std::error]] {
     return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
 }
 
-func _parse_int_or_num(str: []byte) std::result[[bubby::parse_success, std::error]] {
+func _parse_int_or_number(str: []byte) std::result[[bubby::parse_success, std::error]] {
     if countof(str) == 0 {
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
@@ -592,20 +592,20 @@ func _parse_int_or_num(str: []byte) std::result[[bubby::parse_success, std::erro
     }
     for cur != countof(str) and (std::ascii::is_digit(str[cur]) or (type == bubby::type::INT and str[cur] == '.')) {
         if str[cur] == '.' {
-            type = bubby::type::NUM;
+            type = bubby::type::NUMBER;
             cur = cur + 1;
             continue;
         }
         cur = cur + 1;
     }
 
-    if type == bubby::type::NUM {
+    if type == bubby::type::NUMBER {
         var result = f64::init_from_str(str[0:cur]);
         if result.is_error() {
             return std::result[[bubby::parse_success, std::error]]::init_error(result.error());
         }
         return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
-            .value = value::init_num(result.value()),
+            .value = value::init_number(result.value()),
             .index = cur,
         });
     }
@@ -621,7 +621,7 @@ func _parse_int_or_num(str: []byte) std::result[[bubby::parse_success, std::erro
 }
 
 func parse_int(str: []byte) std::result[[bubby::parse_success, std::error]] {
-    var result = bubby::_parse_int_or_num(str);
+    var result = bubby::_parse_int_or_number(str);
     if result.is_error() {
         return result;
     }
@@ -633,13 +633,13 @@ func parse_int(str: []byte) std::result[[bubby::parse_success, std::error]] {
     return result;
 }
 
-func parse_num(str: []byte) std::result[[bubby::parse_success, std::error]] {
-    var result = bubby::_parse_int_or_num(str);
+func parse_number(str: []byte) std::result[[bubby::parse_success, std::error]] {
+    var result = bubby::_parse_int_or_number(str);
     if result.is_error() {
         return result;
     }
     var value = result.value().value;
-    if value.type() != bubby::type::NUM {
+    if value.type() != bubby::type::NUMBER {
         value.fini();
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
@@ -880,7 +880,7 @@ func parse(str: []byte) std::result[[bubby::parse_success, std::error]] {
     }
 
     if str[0] == '+' or str[0] == '-' or std::ascii::is_digit(str[0]) {
-        return bubby::_parse_int_or_num(str);
+        return bubby::_parse_int_or_number(str);
     }
 
     if str[0] == '\"' {
