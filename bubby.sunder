@@ -47,8 +47,7 @@ struct value {
     }
 
     func init_string(string: []byte) value {
-        var new = std::slice[[byte]]::new(countof(string));
-        std::slice[[byte]]::copy(new, string);
+        var new = std::str::new(string);
         return (:value){
             ._type = bubby::type::STRING,
             ._data = (:typeof(value::_SELF._data)){.string = new},
@@ -98,7 +97,7 @@ struct value {
             return;
         }
         bubby::type::STRING {
-            std::slice[[byte]]::delete(self.*._data.string);
+            std::str::delete(self.*._data.string);
             return;
         }
         bubby::type::VECTOR {
