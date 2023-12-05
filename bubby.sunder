@@ -431,8 +431,8 @@ struct value {
         return (:*std::hash_map[[value, value]])self.*._data.map;
     }
 
-    func map_insert_integer(self: *value, int: s64, val: bubby::value) void {
-        var existing = self.*.map().*.insert(value::init_integer(int), val);
+    func map_insert_integer(self: *value, integer: s64, val: bubby::value) void {
+        var existing = self.*.map().*.insert(value::init_integer(integer), val);
         if existing.is_value() {
             var existing = existing.value();
             existing.key.fini();
@@ -440,16 +440,16 @@ struct value {
         }
     }
 
-    func map_lookup_integer(self: *value, int: s64) std::optional[[*value]] {
-        var optional = self.*.map_lookup_view_integer(int);
+    func map_lookup_integer(self: *value, integer: s64) std::optional[[*value]] {
+        var optional = self.*.map_lookup_view_integer(integer);
         if optional.is_empty() {
             return std::optional[[*value]]::EMPTY;
         }
         return std::optional[[*value]]::init_value(optional.value().value);
     }
 
-    func map_xlookup_integer(self: *value, int: s64) *value {
-        var optional = self.*.map_lookup_integer(int);
+    func map_xlookup_integer(self: *value, integer: s64) *value {
+        var optional = self.*.map_lookup_integer(integer);
         return optional.value();
     }
 
@@ -461,13 +461,13 @@ struct value {
         return self.*.map().*.lookup_view(key);
     }
 
-    func map_xlookup_view_integer(self: *value, int: s64) std::key_value_view[[value, value]] {
-        var optional = self.*.map_lookup_view_integer(int);
+    func map_xlookup_view_integer(self: *value, integer: s64) std::key_value_view[[value, value]] {
+        var optional = self.*.map_lookup_view_integer(integer);
         return optional.value();
     }
 
-    func map_insert_num(self: *value, num: f64, val: bubby::value) void {
-        var existing = self.*.map().*.insert(value::init_number(num), val);
+    func map_insert_number(self: *value, number: f64, val: bubby::value) void {
+        var existing = self.*.map().*.insert(value::init_number(number), val);
         if existing.is_value() {
             var existing = existing.value();
             existing.key.fini();
@@ -475,20 +475,20 @@ struct value {
         }
     }
 
-    func map_lookup_num(self: *value, num: f64) std::optional[[*value]] {
-        var optional = self.*.map_lookup_view_num(num);
+    func map_lookup_number(self: *value, number: f64) std::optional[[*value]] {
+        var optional = self.*.map_lookup_view_number(number);
         if optional.is_empty() {
             return std::optional[[*value]]::EMPTY;
         }
         return std::optional[[*value]]::init_value(optional.value().value);
     }
 
-    func map_xlookup_num(self: *value, num: f64) *value {
-        var optional = self.*.map_lookup_num(num);
+    func map_xlookup_number(self: *value, number: f64) *value {
+        var optional = self.*.map_lookup_number(number);
         return optional.value();
     }
 
-    func map_lookup_view_num(self: *value, number: f64) std::optional[[std::key_value_view[[value, value]]]] {
+    func map_lookup_view_number(self: *value, number: f64) std::optional[[std::key_value_view[[value, value]]]] {
         var key = (:value){
             ._type = bubby::type::NUMBER,
             ._data = (:typeof(value::_SELF._data)){.number = number},
@@ -496,8 +496,8 @@ struct value {
         return self.*.map().*.lookup_view(key);
     }
 
-    func map_xlookup_view_num(self: *value, num: f64) std::key_value_view[[value, value]] {
-        var optional = self.*.map_lookup_view_num(num);
+    func map_xlookup_view_number(self: *value, number: f64) std::key_value_view[[value, value]] {
+        var optional = self.*.map_lookup_view_number(number);
         return optional.value();
     }
 
