@@ -269,11 +269,10 @@ struct value {
 
         switch self.*._type {
         bubby::type::BOOLEAN {
-            return std::write_format(
-                writer,
-                "{}",
-                (:[]std::formatter)[
-                    std::formatter::init[[bool]](&self.*._data.boolean)]);
+            if self.*._data.boolean {
+                return std::write_all(writer, "#t");
+            }
+            return std::write_all(writer, "#f");
         }
         bubby::type::INTEGER {
             return std::write_format(
@@ -560,17 +559,17 @@ struct parse_success {
 }
 
 func parse_boolean(str: []byte) std::result[[bubby::parse_success, std::error]] {
-    if std::str::eq(str, "true") {
+    if std::str::eq(str, "#t") {
         return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
             .value = value::init_boolean(true),
-            .index = countof("true"),
+            .index = countof("#t"),
         });
     }
 
-    if std::str::eq(str, "false") {
+    if std::str::eq(str, "#f") {
         return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
             .value = value::init_boolean(false),
-            .index = countof("false"),
+            .index = countof("#f"),
         });
     }
 
@@ -875,7 +874,7 @@ func parse(str: []byte) std::result[[bubby::parse_success, std::error]] {
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
 
-    if str[0] == 't' or str[0] == 'f' {
+    if str[0] == '#' {
         return bubby::parse_boolean(str);
     }
 
