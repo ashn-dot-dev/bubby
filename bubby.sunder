@@ -498,7 +498,7 @@ struct value {
         return optional.value();
     }
 
-    func map_insert_str(self: *value, str: []byte, val: bubby::value) void {
+    func map_insert_string(self: *value, str: []byte, val: bubby::value) void {
         var existing = self.*.map().*.insert(value::init_string(str), val);
         if existing.is_value() {
             var existing = existing.value();
@@ -507,20 +507,20 @@ struct value {
         }
     }
 
-    func map_lookup_str(self: *value, str: []byte) std::optional[[*value]] {
-        var optional = self.*.map_lookup_view_str(str);
+    func map_lookup_string(self: *value, str: []byte) std::optional[[*value]] {
+        var optional = self.*.map_lookup_view_string(str);
         if optional.is_empty() {
             return std::optional[[*value]]::EMPTY;
         }
         return std::optional[[*value]]::init_value(optional.value().value);
     }
 
-    func map_xlookup_str(self: *value, str: []byte) *value {
-        var optional = self.*.map_lookup_str(str);
+    func map_xlookup_string(self: *value, str: []byte) *value {
+        var optional = self.*.map_lookup_string(str);
         return optional.value();
     }
 
-    func map_lookup_view_str(self: *value, str: []byte) std::optional[[std::key_value_view[[value, value]]]] {
+    func map_lookup_view_string(self: *value, str: []byte) std::optional[[std::key_value_view[[value, value]]]] {
         var key = (:value){
             ._type = bubby::type::STRING,
             ._data = (:typeof(value::_SELF._data)){.string = str},
@@ -528,8 +528,8 @@ struct value {
         return self.*.map().*.lookup_view(key);
     }
 
-    func map_xlookup_view_str(self: *value, str: []byte) std::key_value_view[[value, value]] {
-        var optional = self.*.map_lookup_view_str(str);
+    func map_xlookup_view_string(self: *value, str: []byte) std::key_value_view[[value, value]] {
+        var optional = self.*.map_lookup_view_string(str);
         return optional.value();
     }
 
