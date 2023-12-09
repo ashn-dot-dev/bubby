@@ -427,6 +427,41 @@ struct value {
         return (:*std::hash_map[[value, value]])self.*._data.map;
     }
 
+    func map_insert_boolean(self: *value, boolean: bool, val: bubby::value) void {
+        var existing = self.*.map().*.insert(value::init_boolean(boolean), val);
+        if existing.is_value() {
+            var existing = existing.value();
+            existing.key.fini();
+            existing.value.fini();
+        }
+    }
+
+    func map_lookup_boolean(self: *value, boolean: bool) std::optional[[*value]] {
+        var optional = self.*.map_lookup_view_boolean(boolean);
+        if optional.is_empty() {
+            return std::optional[[*value]]::EMPTY;
+        }
+        return std::optional[[*value]]::init_value(optional.value().value);
+    }
+
+    func map_xlookup_boolean(self: *value, boolean: bool) *value {
+        var optional = self.*.map_lookup_boolean(boolean);
+        return optional.value();
+    }
+
+    func map_lookup_view_boolean(self: *value, boolean: bool) std::optional[[std::key_value_view[[value, value]]]] {
+        var key = (:value){
+            ._type = bubby::type::BOOLEAN,
+            ._data = (:typeof(value::_SELF._data)){.boolean = boolean},
+        };
+        return self.*.map().*.lookup_view(key);
+    }
+
+    func map_xlookup_view_boolean(self: *value, boolean: bool) std::key_value_view[[value, value]] {
+        var optional = self.*.map_lookup_view_boolean(boolean);
+        return optional.value();
+    }
+
     func map_insert_integer(self: *value, integer: s64, val: bubby::value) void {
         var existing = self.*.map().*.insert(value::init_integer(integer), val);
         if existing.is_value() {
