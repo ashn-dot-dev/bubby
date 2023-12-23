@@ -27,6 +27,16 @@ struct value {
         };
     }
 
+    func init_str_from_format(format: []byte, args: []std::formatter) value {
+        var s = std::string::init_from_format(format, args);
+        defer s.fini();
+        var new = std::str::new(s.data());
+        return (:value){
+            ._type = bubby::type::STR,
+            ._data = (:typeof(value::_SELF._data)){.str = new},
+        };
+    }
+
     func init_vec() value {
         var new = std::vector[[value]]::init();
         return (:value){
