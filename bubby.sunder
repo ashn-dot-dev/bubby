@@ -2,11 +2,8 @@ namespace bubby;
 import "std";
 
 enum type {
-    BOOLEAN;
-    INTEGER;
-    NUMBER;
-    STRING;
-    VECTOR;
+    STR;
+    VEC;
     MAP;
     SET;
 }
@@ -14,51 +11,27 @@ enum type {
 struct value {
     var _type: type;
     var _data: union {
-        var boolean: bool;
-        var integer: s64;
-        var number: f64;
-        var string: []byte;
-        var vector: std::vector[[value]];
+        var str: []byte;
+        var vec: std::vector[[value]];
         var map: *any; # *std::hash_map[[value, value]];
         var set: *any; # *std::hash_set[[value]];
     };
 
     let _SELF: value = uninit;
 
-    func init_boolean(boolean: bool) value {
+    func init_str(str: []byte) value {
+        var new = std::str::new(str);
         return (:value){
-            ._type = bubby::type::BOOLEAN,
-            ._data = (:typeof(value::_SELF._data)){.boolean = boolean},
+            ._type = bubby::type::STR,
+            ._data = (:typeof(value::_SELF._data)){.str = new},
         };
     }
 
-    func init_integer(integer: s64) value {
-        return (:value){
-            ._type = bubby::type::INTEGER,
-            ._data = (:typeof(value::_SELF._data)){.integer = integer},
-        };
-    }
-
-    func init_number(number: f64) value {
-        return (:value){
-            ._type = bubby::type::NUMBER,
-            ._data = (:typeof(value::_SELF._data)){.number = number},
-        };
-    }
-
-    func init_string(string: []byte) value {
-        var new = std::str::new(string);
-        return (:value){
-            ._type = bubby::type::STRING,
-            ._data = (:typeof(value::_SELF._data)){.string = new},
-        };
-    }
-
-    func init_vector() value {
+    func init_vec() value {
         var new = std::vector[[value]]::init();
         return (:value){
-            ._type = bubby::type::VECTOR,
-            ._data = (:typeof(value::_SELF._data)){.vector = new},
+            ._type = bubby::type::VEC,
+            ._data = (:typeof(value::_SELF._data)){.vec = new},
         };
     }
 
@@ -93,19 +66,16 @@ struct value {
 
     func fini(self: *value) void {
         switch self.*._type {
-        bubby::type::BOOLEAN or bubby::type::INTEGER or bubby::type::NUMBER {
+        bubby::type::STR {
+            std::str::delete(self.*._data.str);
             return;
         }
-        bubby::type::STRING {
-            std::str::delete(self.*._data.string);
-            return;
-        }
-        bubby::type::VECTOR {
-            var iter = std::slice_iterator[[value]]::init(self.*._data.vector.data());
+        bubby::type::VEC {
+            var iter = std::slice_iterator[[value]]::init(self.*._data.vec.data());
             for iter.advance() {
                 value::fini(iter.current());
             }
-            std::vector[[value]]::fini(&self.*._data.vector);
+            std::vector[[value]]::fini(&self.*._data.vec);
             return;
         }
         bubby::type::MAP {
@@ -136,21 +106,12 @@ struct value {
 
     func hash(self: *value) usize {
         switch self.*._type {
-        bubby::type::BOOLEAN {
-            return self.*._data.boolean.hash();
+        bubby::type::STR {
+            return self.*._data.str.hash();
         }
-        bubby::type::INTEGER {
-            return self.*._data.integer.hash();
-        }
-        bubby::type::NUMBER {
-            return self.*._data.number.hash();
-        }
-        bubby::type::STRING {
-            return self.*._data.string.hash();
-        }
-        bubby::type::VECTOR {
+        bubby::type::VEC {
             var hash = 0u;
-            var iter = std::slice_iterator[[value]]::init(self.*._data.vector.data());
+            var iter = std::slice_iterator[[value]]::init(self.*._data.vec.data());
             for iter.advance() {
                 hash = hash +% value::hash(iter.current());
             }
@@ -188,24 +149,15 @@ struct value {
         }
 
         switch lhs.*._type {
-        bubby::type::BOOLEAN {
-            return std::eq[[bool]](&lhs.*._data.boolean, &rhs.*._data.boolean);
+        bubby::type::STR {
+            return std::eq[[[]byte]](&lhs.*._data.str, &rhs.*._data.str);
         }
-        bubby::type::INTEGER {
-            return std::eq[[s64]](&lhs.*._data.integer, &rhs.*._data.integer);
-        }
-        bubby::type::NUMBER {
-            return std::eq[[f64]](&lhs.*._data.number, &rhs.*._data.number);
-        }
-        bubby::type::STRING {
-            return std::eq[[[]byte]](&lhs.*._data.string, &rhs.*._data.string);
-        }
-        bubby::type::VECTOR {
-            if lhs.*._data.vector.count() != rhs.*._data.vector.count() {
+        bubby::type::VEC {
+            if lhs.*._data.vec.count() != rhs.*._data.vec.count() {
                 return false;
             }
-            var lhs_iter = std::slice_iterator[[value]]::init(lhs.*._data.vector.data());
-            var rhs_iter = std::slice_iterator[[value]]::init(rhs.*._data.vector.data());
+            var lhs_iter = std::slice_iterator[[value]]::init(lhs.*._data.vec.data());
+            var rhs_iter = std::slice_iterator[[value]]::init(rhs.*._data.vec.data());
             for lhs_iter.advance() and rhs_iter.advance() {
                 if not std::eq[[value]](lhs_iter.current(), rhs_iter.current()) {
                     return false;
@@ -265,35 +217,15 @@ struct value {
         }
 
         switch self.*._type {
-        bubby::type::BOOLEAN {
-            if self.*._data.boolean {
-                return std::write_all(writer, "#t");
-            }
-            return std::write_all(writer, "#f");
-        }
-        bubby::type::INTEGER {
-            return std::write_format(
-                writer,
-                "{}",
-                (:[]std::formatter)[
-                    std::formatter::init[[s64]](&self.*._data.integer)]);
-        }
-        bubby::type::NUMBER {
-            return std::write_format(
-                writer,
-                "{}",
-                (:[]std::formatter)[
-                    std::formatter::init[[f64]](&self.*._data.number)]);
-        }
-        bubby::type::STRING {
+        bubby::type::STR {
             var result = std::write_all(writer, "\"");
             if result.is_error() {
                 return result;
             }
             # All non-printable bytes, plus the double quote used to denote the
             # start and end of the string, are printed using escaped hex bytes.
-            for i in countof(self.*._data.string) {
-                var c = self.*._data.string[i];
+            for i in countof(self.*._data.str) {
+                var c = self.*._data.str[i];
                 if c == '\"' or c == '\\' or c < ' ' or c > '~' {
                     let DIGITS = (:[]byte)[
                         '0', '1', '2', '3', '4', '5', '6', '7',
@@ -320,13 +252,13 @@ struct value {
             }
             return std::write_all(writer, "\"");
         }
-        bubby::type::VECTOR {
+        bubby::type::VEC {
             var result = std::write_all(writer, "[");
             if result.is_error() {
                 return result;
             }
             var sep = "";
-            var iter = std::slice_iterator[[value]]::init(self.*._data.vector.data());
+            var iter = std::slice_iterator[[value]]::init(self.*._data.vec.data());
             for iter.advance() {
                 var result = std::write_format(
                     writer,
@@ -397,29 +329,14 @@ struct value {
         return self.*._type;
     }
 
-    func boolean(self: *value) bool {
-        assert self.*._type == bubby::type::BOOLEAN;
-        return self.*._data.boolean;
+    func str(self: *value) []byte {
+        assert self.*._type == bubby::type::STR;
+        return self.*._data.str;
     }
 
-    func integer(self: *value) s64 {
-        assert self.*._type == bubby::type::INTEGER;
-        return self.*._data.integer;
-    }
-
-    func number(self: *value) f64 {
-        assert self.*._type == bubby::type::NUMBER;
-        return self.*._data.number;
-    }
-
-    func string(self: *value) []byte {
-        assert self.*._type == bubby::type::STRING;
-        return self.*._data.string;
-    }
-
-    func vector(self: *value) *std::vector[[value]] {
-        assert self.*._type == bubby::type::VECTOR;
-        return &self.*._data.vector;
+    func vec(self: *value) *std::vector[[value]] {
+        assert self.*._type == bubby::type::VEC;
+        return &self.*._data.vec;
     }
 
     func map(self: *value) *std::hash_map[[value, value]] {
@@ -427,8 +344,8 @@ struct value {
         return (:*std::hash_map[[value, value]])self.*._data.map;
     }
 
-    func map_insert_boolean(self: *value, boolean: bool, val: bubby::value) void {
-        var existing = self.*.map().*.insert(value::init_boolean(boolean), val);
+    func map_insert_str(self: *value, str: []byte, val: bubby::value) void {
+        var existing = self.*.map().*.insert(value::init_str(str), val);
         if existing.is_value() {
             var existing = existing.value();
             existing.key.fini();
@@ -436,134 +353,29 @@ struct value {
         }
     }
 
-    func map_lookup_boolean(self: *value, boolean: bool) std::optional[[*value]] {
-        var optional = self.*.map_lookup_view_boolean(boolean);
+    func map_lookup_str(self: *value, str: []byte) std::optional[[*value]] {
+        var optional = self.*.map_lookup_view_str(str);
         if optional.is_empty() {
             return std::optional[[*value]]::EMPTY;
         }
         return std::optional[[*value]]::init_value(optional.value().value);
     }
 
-    func map_xlookup_boolean(self: *value, boolean: bool) *value {
-        var optional = self.*.map_lookup_boolean(boolean);
+    func map_xlookup_str(self: *value, str: []byte) *value {
+        var optional = self.*.map_lookup_str(str);
         return optional.value();
     }
 
-    func map_lookup_view_boolean(self: *value, boolean: bool) std::optional[[std::key_value_view[[value, value]]]] {
+    func map_lookup_view_str(self: *value, str: []byte) std::optional[[std::key_value_view[[value, value]]]] {
         var key = (:value){
-            ._type = bubby::type::BOOLEAN,
-            ._data = (:typeof(value::_SELF._data)){.boolean = boolean},
+            ._type = bubby::type::STR,
+            ._data = (:typeof(value::_SELF._data)){.str = str},
         };
         return self.*.map().*.lookup_view(key);
     }
 
-    func map_xlookup_view_boolean(self: *value, boolean: bool) std::key_value_view[[value, value]] {
-        var optional = self.*.map_lookup_view_boolean(boolean);
-        return optional.value();
-    }
-
-    func map_insert_integer(self: *value, integer: s64, val: bubby::value) void {
-        var existing = self.*.map().*.insert(value::init_integer(integer), val);
-        if existing.is_value() {
-            var existing = existing.value();
-            existing.key.fini();
-            existing.value.fini();
-        }
-    }
-
-    func map_lookup_integer(self: *value, integer: s64) std::optional[[*value]] {
-        var optional = self.*.map_lookup_view_integer(integer);
-        if optional.is_empty() {
-            return std::optional[[*value]]::EMPTY;
-        }
-        return std::optional[[*value]]::init_value(optional.value().value);
-    }
-
-    func map_xlookup_integer(self: *value, integer: s64) *value {
-        var optional = self.*.map_lookup_integer(integer);
-        return optional.value();
-    }
-
-    func map_lookup_view_integer(self: *value, integer: s64) std::optional[[std::key_value_view[[value, value]]]] {
-        var key = (:value){
-            ._type = bubby::type::INTEGER,
-            ._data = (:typeof(value::_SELF._data)){.integer = integer},
-        };
-        return self.*.map().*.lookup_view(key);
-    }
-
-    func map_xlookup_view_integer(self: *value, integer: s64) std::key_value_view[[value, value]] {
-        var optional = self.*.map_lookup_view_integer(integer);
-        return optional.value();
-    }
-
-    func map_insert_number(self: *value, number: f64, val: bubby::value) void {
-        var existing = self.*.map().*.insert(value::init_number(number), val);
-        if existing.is_value() {
-            var existing = existing.value();
-            existing.key.fini();
-            existing.value.fini();
-        }
-    }
-
-    func map_lookup_number(self: *value, number: f64) std::optional[[*value]] {
-        var optional = self.*.map_lookup_view_number(number);
-        if optional.is_empty() {
-            return std::optional[[*value]]::EMPTY;
-        }
-        return std::optional[[*value]]::init_value(optional.value().value);
-    }
-
-    func map_xlookup_number(self: *value, number: f64) *value {
-        var optional = self.*.map_lookup_number(number);
-        return optional.value();
-    }
-
-    func map_lookup_view_number(self: *value, number: f64) std::optional[[std::key_value_view[[value, value]]]] {
-        var key = (:value){
-            ._type = bubby::type::NUMBER,
-            ._data = (:typeof(value::_SELF._data)){.number = number},
-        };
-        return self.*.map().*.lookup_view(key);
-    }
-
-    func map_xlookup_view_number(self: *value, number: f64) std::key_value_view[[value, value]] {
-        var optional = self.*.map_lookup_view_number(number);
-        return optional.value();
-    }
-
-    func map_insert_string(self: *value, str: []byte, val: bubby::value) void {
-        var existing = self.*.map().*.insert(value::init_string(str), val);
-        if existing.is_value() {
-            var existing = existing.value();
-            existing.key.fini();
-            existing.value.fini();
-        }
-    }
-
-    func map_lookup_string(self: *value, str: []byte) std::optional[[*value]] {
-        var optional = self.*.map_lookup_view_string(str);
-        if optional.is_empty() {
-            return std::optional[[*value]]::EMPTY;
-        }
-        return std::optional[[*value]]::init_value(optional.value().value);
-    }
-
-    func map_xlookup_string(self: *value, str: []byte) *value {
-        var optional = self.*.map_lookup_string(str);
-        return optional.value();
-    }
-
-    func map_lookup_view_string(self: *value, str: []byte) std::optional[[std::key_value_view[[value, value]]]] {
-        var key = (:value){
-            ._type = bubby::type::STRING,
-            ._data = (:typeof(value::_SELF._data)){.string = str},
-        };
-        return self.*.map().*.lookup_view(key);
-    }
-
-    func map_xlookup_view_string(self: *value, str: []byte) std::key_value_view[[value, value]] {
-        var optional = self.*.map_lookup_view_string(str);
+    func map_xlookup_view_str(self: *value, str: []byte) std::key_value_view[[value, value]] {
+        var optional = self.*.map_lookup_view_str(str);
         return optional.value();
     }
 
@@ -590,94 +402,7 @@ struct parse_success {
     var index: usize;
 }
 
-func parse_boolean(str: []byte) std::result[[bubby::parse_success, std::error]] {
-    if std::str::eq(str, "#t") {
-        return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
-            .value = value::init_boolean(true),
-            .index = countof("#t"),
-        });
-    }
-
-    if std::str::eq(str, "#f") {
-        return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
-            .value = value::init_boolean(false),
-            .index = countof("#f"),
-        });
-    }
-
-    return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
-}
-
-func _parse_int_or_number(str: []byte) std::result[[bubby::parse_success, std::error]] {
-    if countof(str) == 0 {
-        return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
-    }
-
-    var cur = 0u;
-    var type = bubby::type::INTEGER;
-    if str[cur] == '+' or str[cur] == '-' {
-        cur = cur + 1;
-    }
-    if cur != countof(str) and not std::ascii::is_digit(str[cur]) {
-        return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
-    }
-    for cur != countof(str) and (std::ascii::is_digit(str[cur]) or (type == bubby::type::INTEGER and str[cur] == '.')) {
-        if str[cur] == '.' {
-            type = bubby::type::NUMBER;
-            cur = cur + 1;
-            continue;
-        }
-        cur = cur + 1;
-    }
-
-    if type == bubby::type::NUMBER {
-        var result = f64::init_from_str(str[0:cur]);
-        if result.is_error() {
-            return std::result[[bubby::parse_success, std::error]]::init_error(result.error());
-        }
-        return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
-            .value = value::init_number(result.value()),
-            .index = cur,
-        });
-    }
-
-    var result = s64::init_from_str(str[0:cur], 10);
-    if result.is_error() {
-        return std::result[[bubby::parse_success, std::error]]::init_error(result.error());
-    }
-    return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
-        .value = value::init_integer(result.value()),
-        .index = cur,
-    });
-}
-
-func parse_integer(str: []byte) std::result[[bubby::parse_success, std::error]] {
-    var result = bubby::_parse_int_or_number(str);
-    if result.is_error() {
-        return result;
-    }
-    var value = result.value().value;
-    if value.type() != bubby::type::INTEGER {
-        value.fini();
-        return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
-    }
-    return result;
-}
-
-func parse_number(str: []byte) std::result[[bubby::parse_success, std::error]] {
-    var result = bubby::_parse_int_or_number(str);
-    if result.is_error() {
-        return result;
-    }
-    var value = result.value().value;
-    if value.type() != bubby::type::NUMBER {
-        value.fini();
-        return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
-    }
-    return result;
-}
-
-func parse_string(str: []byte) std::result[[bubby::parse_success, std::error]] {
+func parse_str(str: []byte) std::result[[bubby::parse_success, std::error]] {
     if countof(str) == 0 {
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
@@ -729,20 +454,20 @@ func parse_string(str: []byte) std::result[[bubby::parse_success, std::error]] {
     cur = cur + 1;
     return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
         .value = (:value){
-            ._type = bubby::type::STRING,
-            ._data = (:typeof(value::_SELF._data)){.string = buf},
+            ._type = bubby::type::STR,
+            ._data = (:typeof(value::_SELF._data)){.str = buf},
         },
         .index = cur,
     });
 }
 
-func parse_vector(str: []byte) std::result[[bubby::parse_success, std::error]] {
+func parse_vec(str: []byte) std::result[[bubby::parse_success, std::error]] {
     if countof(str) == 0 {
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
 
     var cur = 0u;
-    var out = value::init_vector();
+    var out = value::init_vec();
     if cur == countof(str) or str[cur] != '[' {
         out.fini();
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
@@ -750,7 +475,7 @@ func parse_vector(str: []byte) std::result[[bubby::parse_success, std::error]] {
     cur = cur + 1;
     for cur != countof(str) {
         # Require space separation between elements or optional space separation before the terminating ']'.
-        if out.vector().*.count() != 0 and cur != countof(str) and str[cur] != ']' and not bubby::_is_whitespace(str[cur]) {
+        if out.vec().*.count() != 0 and cur != countof(str) and str[cur] != ']' and not bubby::_is_whitespace(str[cur]) {
             out.fini();
             return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
         }
@@ -767,7 +492,7 @@ func parse_vector(str: []byte) std::result[[bubby::parse_success, std::error]] {
             return result;
         }
         cur = cur + result.value().index;
-        out.vector().*.push(result.value().value);
+        out.vec().*.push(result.value().value);
     }
     if cur == countof(str) or str[cur] != ']' {
         out.fini();
@@ -884,6 +609,7 @@ func parse_set(str: []byte) std::result[[bubby::parse_success, std::error]] {
         var val = result.value().value;
 
         if out.set().*.contains(val) {
+            val.fini();
             out.fini();
             return std::result[[bubby::parse_success, std::error]]::init_error((:std::error)&"duplicate set element");
         }
@@ -906,20 +632,12 @@ func parse(str: []byte) std::result[[bubby::parse_success, std::error]] {
         return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
     }
 
-    if str[0] == '#' {
-        return bubby::parse_boolean(str);
-    }
-
-    if str[0] == '+' or str[0] == '-' or std::ascii::is_digit(str[0]) {
-        return bubby::_parse_int_or_number(str);
-    }
-
     if str[0] == '\"' {
-        return bubby::parse_string(str);
+        return bubby::parse_str(str);
     }
 
     if str[0] == '[' {
-        return bubby::parse_vector(str);
+        return bubby::parse_vec(str);
     }
 
     if str[0] == '{' {
