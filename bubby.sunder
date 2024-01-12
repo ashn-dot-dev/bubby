@@ -1,7 +1,7 @@
 namespace bubby;
 import "std";
 
-enum type {
+enum kind {
     STR;
     VEC;
     MAP;
@@ -9,7 +9,7 @@ enum type {
 }
 
 struct value {
-    var _type: type;
+    var _kind: kind;
     var _data: union {
         var str: []byte;
         var vec: std::vector[[value]];
@@ -22,7 +22,7 @@ struct value {
     func init_str(str: []byte) value {
         var new = std::str::new(str);
         return (:value){
-            ._type = bubby::type::STR,
+            ._kind = bubby::kind::STR,
             ._data = (:typeof(value::_SELF._data)){.str = new},
         };
     }
@@ -32,7 +32,7 @@ struct value {
         defer s.fini();
         var new = std::str::new(s.data());
         return (:value){
-            ._type = bubby::type::STR,
+            ._kind = bubby::kind::STR,
             ._data = (:typeof(value::_SELF._data)){.str = new},
         };
     }
@@ -40,7 +40,7 @@ struct value {
     func init_vec() value {
         var new = std::vector[[value]]::init();
         return (:value){
-            ._type = bubby::type::VEC,
+            ._kind = bubby::kind::VEC,
             ._data = (:typeof(value::_SELF._data)){.vec = new},
         };
     }
@@ -49,7 +49,7 @@ struct value {
         var new = std::new[[std::hash_map[[value, value]]]]();
         *new = std::hash_map[[value, value]]::init();
         return (:value){
-            ._type = bubby::type::MAP,
+            ._kind = bubby::kind::MAP,
             ._data = (:typeof(value::_SELF._data)){.map = new},
         };
     }
@@ -58,7 +58,7 @@ struct value {
         var new = std::new[[std::hash_set[[value]]]]();
         *new = std::hash_set[[value]]::init();
         return (:value){
-            ._type = bubby::type::SET,
+            ._kind = bubby::kind::SET,
             ._data = (:typeof(value::_SELF._data)){.set = new},
         };
     }
@@ -75,12 +75,12 @@ struct value {
     }
 
     func fini(self: *value) void {
-        switch self.*._type {
-        bubby::type::STR {
+        switch self.*._kind {
+        bubby::kind::STR {
             std::str::delete(self.*._data.str);
             return;
         }
-        bubby::type::VEC {
+        bubby::kind::VEC {
             var iter = std::slice_iterator[[value]]::init(self.*._data.vec.data());
             for iter.advance() {
                 value::fini(iter.current());
@@ -88,7 +88,7 @@ struct value {
             std::vector[[value]]::fini(&self.*._data.vec);
             return;
         }
-        bubby::type::MAP {
+        bubby::kind::MAP {
             var map = self.*.map();
             var iter = std::hash_map_iterator[[value, value]]::init(map);
             for iter.advance() {
@@ -99,7 +99,7 @@ struct value {
             std::delete[[std::hash_map[[value, value]]]](map);
             return;
         }
-        bubby::type::SET {
+        bubby::kind::SET {
             var set = self.*.set();
             var iter = std::hash_set_iterator[[value]]::init(set);
             for iter.advance() {
@@ -115,11 +115,11 @@ struct value {
     }
 
     func hash(self: *value) usize {
-        switch self.*._type {
-        bubby::type::STR {
+        switch self.*._kind {
+        bubby::kind::STR {
             return self.*._data.str.hash();
         }
-        bubby::type::VEC {
+        bubby::kind::VEC {
             var hash = 0u;
             var iter = std::slice_iterator[[value]]::init(self.*._data.vec.data());
             for iter.advance() {
@@ -127,7 +127,7 @@ struct value {
             }
             return hash;
         }
-        bubby::type::MAP {
+        bubby::kind::MAP {
             var map = self.*.map();
             var hash = 0u;
             var iter = std::hash_map_iterator[[value, value]]::init(map);
@@ -138,7 +138,7 @@ struct value {
             }
             return hash;
         }
-        bubby::type::SET {
+        bubby::kind::SET {
             var set = self.*.set();
             var hash = 0u;
             var iter = std::hash_set_iterator[[value]]::init(set);
@@ -154,15 +154,15 @@ struct value {
     }
 
     func eq(lhs: *value, rhs: *value) bool {
-        if lhs.*._type != rhs.*._type {
+        if lhs.*._kind != rhs.*._kind {
             return false;
         }
 
-        switch lhs.*._type {
-        bubby::type::STR {
+        switch lhs.*._kind {
+        bubby::kind::STR {
             return std::eq[[[]byte]](&lhs.*._data.str, &rhs.*._data.str);
         }
-        bubby::type::VEC {
+        bubby::kind::VEC {
             if lhs.*._data.vec.count() != rhs.*._data.vec.count() {
                 return false;
             }
@@ -175,7 +175,7 @@ struct value {
             }
             return true;
         }
-        bubby::type::MAP {
+        bubby::kind::MAP {
             var lhs_map = lhs.*.map();
             var rhs_map = rhs.*.map();
             if lhs_map.*.count() != rhs_map.*.count() {
@@ -195,7 +195,7 @@ struct value {
             }
             return true;
         }
-        bubby::type::SET {
+        bubby::kind::SET {
             var lhs_set = lhs.*.set();
             var rhs_set = rhs.*.set();
             if lhs_set.*.count() != rhs_set.*.count() {
@@ -226,8 +226,8 @@ struct value {
             return std::result[[void, std::error]]::init_error(std::error::INVALID_ARGUMENT);
         }
 
-        switch self.*._type {
-        bubby::type::STR {
+        switch self.*._kind {
+        bubby::kind::STR {
             var result = std::write_all(writer, "\"");
             if result.is_error() {
                 return result;
@@ -262,7 +262,7 @@ struct value {
             }
             return std::write_all(writer, "\"");
         }
-        bubby::type::VEC {
+        bubby::kind::VEC {
             var result = std::write_all(writer, "[");
             if result.is_error() {
                 return result;
@@ -284,7 +284,7 @@ struct value {
             return std::write_all(writer, "]");
 
         }
-        bubby::type::MAP {
+        bubby::kind::MAP {
             var map = self.*.map();
             var result = std::write_all(writer, "{");
             if result.is_error() {
@@ -307,7 +307,7 @@ struct value {
             }
             return std::write_all(writer, "}");
         }
-        bubby::type::SET {
+        bubby::kind::SET {
             var set = self.*.set();
             var result = std::write_all(writer, "(");
             if result.is_error() {
@@ -335,22 +335,22 @@ struct value {
         return std::zeroed[[std::result[[void, std::error]]]]();
     }
 
-    func type(self: *value) bubby::type {
-        return self.*._type;
+    func kind(self: *value) bubby::kind {
+        return self.*._kind;
     }
 
     func str(self: *value) []byte {
-        assert self.*._type == bubby::type::STR;
+        assert self.*._kind == bubby::kind::STR;
         return self.*._data.str;
     }
 
     func vec(self: *value) *std::vector[[value]] {
-        assert self.*._type == bubby::type::VEC;
+        assert self.*._kind == bubby::kind::VEC;
         return &self.*._data.vec;
     }
 
     func map(self: *value) *std::hash_map[[value, value]] {
-        assert self.*._type == bubby::type::MAP;
+        assert self.*._kind == bubby::kind::MAP;
         return (:*std::hash_map[[value, value]])self.*._data.map;
     }
 
@@ -378,7 +378,7 @@ struct value {
 
     func map_lookup_view_str(self: *value, str: []byte) std::optional[[std::key_value_view[[value, value]]]] {
         var key = (:value){
-            ._type = bubby::type::STR,
+            ._kind = bubby::kind::STR,
             ._data = (:typeof(value::_SELF._data)){.str = str},
         };
         return self.*.map().*.lookup_view(key);
@@ -390,7 +390,7 @@ struct value {
     }
 
     func set(self: *value) *std::hash_set[[value]] {
-        assert self.*._type == bubby::type::SET;
+        assert self.*._kind == bubby::kind::SET;
         return (:*std::hash_set[[value]])self.*._data.set;
     }
 
@@ -464,7 +464,7 @@ func parse_str(str: []byte) std::result[[bubby::parse_success, std::error]] {
     cur = cur + 1;
     return std::result[[bubby::parse_success, std::error]]::init_value((:bubby::parse_success){
         .value = (:value){
-            ._type = bubby::type::STR,
+            ._kind = bubby::kind::STR,
             ._data = (:typeof(value::_SELF._data)){.str = buf},
         },
         .index = cur,
