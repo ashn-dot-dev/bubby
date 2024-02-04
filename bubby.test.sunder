@@ -7,7 +7,7 @@ func test_value_to_string_to_value(x: *bubby::value) void {
     defer s.fini();
     var writer = std::writer::init[[std::string]](&s);
 
-    std::print_format(writer, "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](x)]);
+    std::print_format(writer, "{escaped}", (:[]std::formatter)[std::formatter::init[[bubby::value]](x)]);
     var y = bubby::value::init_from_str(s.data());
     if y.is_error() {
         std::print_format_line(
@@ -22,7 +22,7 @@ func test_value_to_string_to_value(x: *bubby::value) void {
     if not std::eq[[bubby::value]](x, &y) {
         std::print_format_line(
             std::err(),
-            "value->string->value roundtrip error:\n\tx = {}\n\ty = {}",
+            "value->string->value roundtrip error:\n\tx = {escaped}\n\ty = {escaped}",
             (:[]std::formatter)[
                 std::formatter::init[[bubby::value]](x),
                 std::formatter::init[[bubby::value]](&y)]);
@@ -54,9 +54,19 @@ func main() void {
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
 
-    var x = bubby::value::init_str("\\foo\tbar\nbaz\0\"qux\"");
+    var x = bubby::value::init_str("foo\nbar");
     defer x.fini();
     std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    var x = bubby::value::init_str("\\foo\tbar\nbaz\0\"qux\"");
+    defer x.fini();
+    std::print_format_line(std::out(), "{e}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    test_value_to_string_to_value(&x);
+
+    var x = bubby::value::init_str("\\foo\tbar\nbaz\0\"qux\"");
+    defer x.fini();
+    std::print_format_line(std::out(), "{escaped}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
     test_value_to_string_to_value(&x);
 
     std::print(std::out(), "\n");
@@ -140,7 +150,7 @@ func main() void {
     var x = result.value().value;
     defer x.fini();
     assert std::str::eq(x.str(), "\\foo\tbar\nbaz\0\"qux\"");
-    std::print_format_line(std::out(), "{}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
+    std::print_format_line(std::out(), "{escaped}", (:[]std::formatter)[std::formatter::init[[bubby::value]](&x)]);
 
     var result = bubby::parse_str("nope");
     std::print_line(std::out(), result.error().*.data);
@@ -241,6 +251,9 @@ func main() void {
 ################################################################################
 # STR
 # "foo"
+# "foo
+# bar"
+# "\x5Cfoo\x09bar\x0Abaz\x00\x22qux\x22"
 # "\x5Cfoo\x09bar\x0Abaz\x00\x22qux\x22"
 #
 # VEC

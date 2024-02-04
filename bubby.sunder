@@ -221,8 +221,18 @@ struct value {
         return false;
     }
 
+    # Accepted format specifiers:
+    #   ""             => default (ASCII bytes " and \ are escaped)
+    #   "e", "escaped" => escaped (non-prinatble ASCII bytes, ", and \ are escaped)
     func format(self: *value, writer: std::writer, fmt: []byte) std::result[[void, std::error]] {
-        if countof(fmt) != 0 {
+        var escaped = false;
+        if countof(fmt) == 0 {
+            # Default non-escaped format is already false.
+        }
+        elif std::str::eq(fmt, "e") or std::str::eq(fmt, "escaped") {
+            escaped = true;
+        }
+        else {
             return std::result[[void, std::error]]::init_error(std::error::INVALID_ARGUMENT);
         }
 
@@ -236,7 +246,7 @@ struct value {
             # start and end of the string, are printed using escaped hex bytes.
             for i in countof(self.*._data.str) {
                 var c = self.*._data.str[i];
-                if c == '\"' or c == '\\' or c < ' ' or c > '~' {
+                if c == '\"' or c == '\\' or escaped and (c < ' ' or c > '~') {
                     let DIGITS = (:[]byte)[
                         '0', '1', '2', '3', '4', '5', '6', '7',
                         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
@@ -426,10 +436,6 @@ func parse_str(str: []byte) std::result[[bubby::parse_success, std::error]] {
     cur += 1;
     for cur != countof(str) and str[cur] != '\"' {
         var c = str[cur];
-        if c < ' ' or c > '~' {
-            std::slice[[byte]]::delete(buf);
-            return std::result[[bubby::parse_success, std::error]]::init_error(std::error::PARSE_FAILURE);
-        }
         if c != '\\' {
             buf = std::slice[[byte]]::resize(buf, countof(buf)+1);
             buf[countof(buf)-1] = c;
