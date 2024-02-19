@@ -129,7 +129,7 @@ func main() void {
     x.set().*.insert(bubby::value::init_set());
     var tmp = bubby::value::init_set();
     defer tmp.fini();
-    var view = x.set().*.lookup_view(tmp);
+    var view = x.set().*.lookup(tmp);
     var view = view.value();
     view.*.set().*.insert(bubby::value::init_str("foo"));
     view.*.set().*.insert(bubby::value::init_str("bar"));
