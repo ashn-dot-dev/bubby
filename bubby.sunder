@@ -167,7 +167,7 @@ struct value {
             var lhs_iter = std::hash_map_iterator[[value, value]]::init(lhs_map);
             for lhs_iter.advance() {
                 var lhs_current = lhs_iter.current();
-                var rhs_current = rhs_map.*.lookup_view(*lhs_current.*.key);
+                var rhs_current = rhs_map.*.lookup_view(lhs_current.*.key);
                 if rhs_current.is_empty() {
                     return false;
                 }
@@ -187,7 +187,7 @@ struct value {
             var lhs_iter = std::hash_set_iterator[[value]]::init(lhs_set);
             for lhs_iter.advance() {
                 var lhs_current = lhs_iter.current();
-                var rhs_current = rhs_set.*.lookup(*lhs_current);
+                var rhs_current = rhs_set.*.lookup(lhs_current);
                 if rhs_current.is_empty() {
                     return false;
                 }
@@ -369,7 +369,7 @@ struct value {
             ._kind = bubby::kind::STR,
             ._data = (:typeof(value::_SELF._data)){.str = str},
         };
-        return self.*.map().*.lookup_view(key);
+        return self.*.map().*.lookup_view(&key);
     }
 
     func map_xlookup_view_str(self: *value, str: []byte) std::key_value_view[[value, value]] {
@@ -580,7 +580,7 @@ func parse_map(str: []byte) bubby::parse_result {
         cur += result.value().index;
         var key = result.value().value;
 
-        if out.map().*.contains(key) {
+        if out.map().*.contains(&key) {
             out.fini();
             key.fini();
             return bubby::parse_result::init_error((:bubby::parse_failure){
@@ -674,7 +674,7 @@ func parse_set(str: []byte) bubby::parse_result {
         cur += result.value().index;
         var val = result.value().value;
 
-        if out.set().*.contains(val) {
+        if out.set().*.contains(&val) {
             val.fini();
             out.fini();
             return bubby::parse_result::init_error((:bubby::parse_failure){
